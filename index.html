@@ -3,96 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>README Generator</title>
+    <title>README Generator Pro</title>
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Source+Code+Pro&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>README Generator</h1>
-            <button id="helpBtn" class="dark-mode-btn">Help</button> <!-- New Help Button -->
-            <button id="darkModeToggle" class="dark-mode-btn">Toggle Dark Mode</button>
-        </div>
+        <header class="header">
+            <h1>README Generator Pro</h1>
+            <div class="header-actions">
+                <button id="helpBtn" class="btn btn-secondary" aria-label="Open help">Help</button>
+                <button id="darkModeToggle" class="btn btn-secondary" aria-label="Toggle dark mode">Dark Mode</button>
+                <button id="highContrastToggle" class="btn btn-secondary" aria-label="Toggle high contrast">High Contrast</button>
+                <button id="settingsBtn" class="btn btn-secondary" aria-label="Open settings">Settings</button>
+            </div>
+        </header>
 
-        <div class="form-group">
-            <label for="templateSelect">Template:</label>
-            <select id="templateSelect">
-                <option value="minimal">Minimal</option>
-                <option value="detailed">Detailed</option>
-                <option value="project">Project</option>
-                <option value="library">Library</option>
-            </select>
-        </div>
+        <form id="readmeForm" class="form-grid">
+            <div class="form-group">
+                <label for="templateSelect">Template <span class="tooltip" data-tooltip="Select a base README structure">ℹ️</span></label>
+                <select id="templateSelect" aria-label="Select README template">
+                    <option value="minimal">Minimal</option>
+                    <option value="detailed">Detailed</option>
+                    <option value="project">Project</option>
+                    <option value="library">Library</option>
+                </select>
+            </div>
 
-        <div class="form-group">
-            <label for="projectName">Project Name:</label>
-            <input type="text" id="projectName" placeholder="Enter your project name">
-        </div>
+            <div class="form-group">
+                <label for="projectName">Project Name <span class="tooltip" data-tooltip="Enter your project's title (required)">ℹ️</span></label>
+                <input type="text" id="projectName" placeholder="e.g., My Awesome Project" aria-required="true">
+            </div>
 
-        <div class="form-group">
-            <label for="description">Description:</label>
-            <textarea id="description" placeholder="Describe your project"></textarea>
-        </div>
+            <div class="form-group full-width">
+                <label for="description">Description <span class="tooltip" data-tooltip="Describe your project’s purpose">ℹ️</span></label>
+                <textarea id="description" placeholder="e.g., A tool to simplify README creation" aria-label="Project description"></textarea>
+            </div>
 
-        <div class="row">
-            <div class="col">
-                <div class="form-group">
-                    <label for="installation">Installation:</label>
-                    <textarea id="installation" placeholder="How to install your project"></textarea>
+            <div class="form-group">
+                <label for="installation">Installation <span class="tooltip" data-tooltip="How to install your project">ℹ️</span></label>
+                <textarea id="installation" placeholder="e.g., npm install my-awesome-project" aria-label="Installation instructions"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="usage">Usage <span class="tooltip" data-tooltip="How to use your project">ℹ️</span></label>
+                <textarea id="usage" placeholder="e.g., Run `npm start` to launch" aria-label="Usage instructions"></textarea>
+            </div>
+
+            <div class="form-group full-width">
+                <label>Badges <span class="tooltip" data-tooltip="Add badges (e.g., version, license)">ℹ️</span></label>
+                <div class="badge-section">
+                    <select id="badgePicker" aria-label="Select a predefined badge">
+                        <option value="">Pick a badge</option>
+                        <option value="![GitHub stars](https://img.shields.io/github/stars/your/repo)">GitHub Stars</option>
+                        <option value="![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)">MIT License</option>
+                        <option value="![NPM Version](https://img.shields.io/npm/v/npm)">NPM Version</option>
+                    </select>
+                    <input type="text" id="badgeInput" placeholder="Or enter custom badge markdown" aria-label="Custom badge input">
+                    <button id="addBadge" class="btn btn-primary" aria-label="Add badge">Add</button>
+                    <div id="badgeList" class="badge-list"></div>
                 </div>
             </div>
-            <div class="col">
-                <div class="form-group">
-                    <label for="usage">Usage:</label>
-                    <textarea id="usage" placeholder="How to use your project"></textarea>
+
+            <div class="form-group full-width">
+                <label>Add Sections <span class="tooltip" data-tooltip="Add optional sections to your README">ℹ️</span></label>
+                <div class="section-buttons" role="group" aria-label="Additional sections">
+                    <button class="btn btn-primary section-btn" data-section="features">Features</button>
+                    <button class="btn btn-primary section-btn" data-section="technologies">Technologies</button>
+                    <button class="btn btn-primary section-btn" data-section="contributing">Contributing</button>
+                    <button class="btn btn-primary section-btn" data-section="tests">Tests</button>
+                    <button class="btn btn-primary section-btn" data-section="license">License</button>
+                    <button class="btn btn-primary section-btn" data-section="contact">Contact</button>
                 </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label>Badges:</label>
-            <div class="badge-section">
-                <input type="text" id="badgeInput" placeholder="Enter badge markdown or URL">
-                <button id="addBadge">Add Badge</button>
-                <div id="badgeList"></div>
+            <div id="additionalSections" class="full-width" aria-live="polite"></div>
+
+            <div class="form-group options full-width">
+                <label><input type="checkbox" id="tocCheckbox" aria-label="Include table of contents"> Include Table of Contents</label>
+                <button id="resetForm" class="btn btn-secondary" aria-label="Reset form">Reset</button>
+                <button id="sampleReadme" class="btn btn-secondary" aria-label="Load sample README">Sample README</button>
+                <button id="saveTemplate" class="btn btn-secondary" aria-label="Save template">Save Template</button>
+                <select id="savedTemplates" aria-label="Load saved template">
+                    <option value="">Load Saved Template</option>
+                </select>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label>Add Sections:</label>
-            <div class="section-buttons">
-                <button class="section-btn" data-section="features">Features</button>
-                <button class="section-btn" data-section="technologies">Technologies</button>
-                <button class="section-btn" data-section="contributing">Contributing</button>
-                <button class="section-btn" data-section="tests">Tests</button>
-                <button class="section-btn" data-section="license">License</button>
-                <button class="section-btn" data-section="contact">Contact</button>
+            <div class="form-group full-width">
+                <button id="generateBtn" class="btn btn-success" aria-label="Generate README">Generate README</button>
             </div>
-        </div>
+        </form>
 
-        <div id="additionalSections"></div>
-
-        <div class="options">
-            <label><input type="checkbox" id="tocCheckbox"> Include Table of Contents</label>
-            <button id="saveTemplate">Save Template</button>
-            <select id="savedTemplates"></select>
-        </div>
-
-        <button id="generateBtn">Generate README</button>
-
-        <div id="previewContainer" style="display: none;">
+        <div id="previewContainer" class="preview-container" style="display: none;">
             <div class="preview-header">
-                <h2>Preview:</h2>
-                <button id="togglePreview">Switch to Rendered</button>
+                <h2>Preview</h2>
+                <div class="preview-actions">
+                    <button id="togglePreview" class="btn btn-secondary">Switch to Rendered</button>
+                    <button id="githubPreview" class="btn btn-secondary">GitHub Style</button>
+                </div>
             </div>
-            <div class="preview" id="preview"></div>
+            <div class="preview" id="preview" role="region" aria-label="README preview"></div>
             <div class="actions">
-                <button class="copy-btn" id="copyBtn">Copy to Clipboard</button>
-                <button class="download-btn" id="downloadBtn">Download README.md</button>
+                <button class="btn btn-warning" id="copyBtn" aria-label="Copy to clipboard">Copy</button>
+                <button class="btn btn-primary" id="downloadMdBtn" aria-label="Download as Markdown">Download .md</button>
+                <button class="btn btn-primary" id="downloadPdfBtn" aria-label="Download as PDF">Download PDF</button>
             </div>
         </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>Settings</h2>
+                <label>Default Template: 
+                    <select id="defaultTemplate">
+                        <option value="minimal">Minimal</option>
+                        <option value="detailed">Detailed</option>
+                        <option value="project">Project</option>
+                        <option value="library">Library</option>
+                    </select>
+                </label>
+                <label>Preview Font Size: <input type="number" id="previewFontSize" min="12" max="20" value="16"></label>
+                <label><input type="checkbox" id="autoSave"> Enable Auto-Save</label>
+                <button id="closeSettings" class="btn btn-primary">Save & Close</button>
+            </div>
+        </div>
+
+        <!-- Enhanced Help Modal -->
+        <div id="helpModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>Help</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="getting-started">Getting Started</button>
+                    <button class="tab-btn" data-tab="markdown-tips">Markdown Tips</button>
+                    <button class="tab-btn" data-tab="faq">FAQ</button>
+                </div>
+                <div id="helpContent" class="tab-content"></div>
+                <button id="closeHelp" class="btn btn-primary">Close</button>
+            </div>
+        </div>
+
+        <!-- Alert Box -->
+        <div id="alertBox" class="alert" style="display: none;" role="alert"></div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
