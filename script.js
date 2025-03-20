@@ -1,63 +1,183 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const elements = {
-        additionalSections: document.getElementById('additionalSections'),
-        sectionButtons: document.querySelectorAll('.section-btn'),
-        generateBtn: document.getElementById('generateBtn'),
-        previewContainer: document.getElementById('previewContainer'),
-        preview: document.getElementById('preview'),
-        copyBtn: document.getElementById('copyBtn'),
-        downloadBtn: document.getElementById('downloadBtn'),
-        darkModeToggle: document.getElementById('darkModeToggle'),
-        templateSelect: document.getElementById('templateSelect'),
-        badgeList: document.getElementById('badgeList'),
-        addBadge: document.getElementById('addBadge'),
-        badgeInput: document.getElementById('badgeInput'),
-        tocCheckbox: document.getElementById('tocCheckbox'),
-        saveTemplate: document.getElementById('saveTemplate'),
-        savedTemplates: document.getElementById('savedTemplates'),
-        togglePreview: document.getElementById('togglePreview'),
-        helpBtn: document.getElementById('helpBtn') // New help button
-    };
+class ReadmeGenerator {
+    constructor() {
+        this.elements = {
+            form: document.getElementById('readmeForm'),
+            preview: document.getElementById('preview'),
+            previewContainer: document.getElementById('previewContainer'),
+            badgeList: document.getElementById('badgeList'),
+            additionalSections: document.getElementById('additionalSections'),
+            alertBox: document.getElementById('alertBox'),
+            templateSelect: document.getElementById('templateSelect'),
+            projectName: document.getElementById('projectName'),
+            description: document.getElementById('description'),
+            installation: document.getElementById('installation'),
+            usage: document.getElementById('usage'),
+            badgeInput: document.getElementById('badgeInput'),
+            badgePicker: document.getElementById('badgePicker'),
+            tocCheckbox: document.getElementById('tocCheckbox'),
+            savedTemplates: document.getElementById('savedTemplates'),
+            settingsModal: document.getElementById('settingsModal'),
+            helpModal: document.getElementById('helpModal'),
+        };
+        this.badges = [];
+        this.isRenderedPreview = false;
+        this.isGithubStyle = false;
+        this.debounceTimeout = null;
+        this.settings = { defaultTemplate: 'detailed', previewFontSize: 16, autoSave: false };
+        this.init();
+    }
 
-    let isRenderedPreview = false;
-    let badges = [];
-    loadSavedTemplates();
-    setupPlaceholders(); // New function for pre-filled examples
-    setupRealTimeTips(); // New function for real-time tips
+    init() {
+        this.bindEvents();
+        this.loadSavedTemplates();
+        this.setupPlaceholders();
+        this.setupRealTimePreview();
+        this.makeSectionsDraggable();
+        this.loadSettings();
+    }
 
-    // Dark mode toggle
-    elements.darkModeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-    });
+    bindEvents() {
+        this.elements.form.addEventListener('input', () => this.debounce(this.generateReadme.bind(this), 300));
+        document.getElementById('generateBtn').addEventListener('click', () => this.validateAndGenerate());
+        document.getElementById('resetForm').addEventListener('click', () => this.resetForm());
+        document.getElementById('sampleReadme').addEventListener('click', () => this.loadSampleReadme());
+        document.getElementById('addBadge').addEventListener('click', () => this.addBadge());
+        document.getElementById('togglePreview').addEventListener('click', () => this.togglePreviewMode());
+        document.getElementById('githubPreview').addEventListener('click', () => this.toggleGithubStyle());
+        document.getElementById('copyBtn').addEventListener('click', () => this.copyToClipboard());
+        document.getElementById('downloadMdBtn').addEventListener('click', () => this.downloadMarkdown());
+        document.getElementById('downloadPdfBtn').addEventListener('click', () => this.downloadPdf());
+        document.getElementById('saveTemplate').addEventListener('click', () => this.saveCurrentTemplate());
+        document.getElementById('savedTemplates').addEventListener('change', () => this.loadTemplate());
+        document.getElementById('darkModeToggle').addEventListener('click', () => document.body.classList.toggle('dark-mode'));
+        document.getElementById('highContrastToggle').addEventListener('click', () => document.body.classList.toggle('high-contrast'));
+        document.getElementById('settingsBtn').addEventListener('click', () => this.showSettings());
+        document.getElementById('closeSettings').addEventListener('click', () => this.saveSettings());
+        document.getElementById('helpBtn').addEventListener('click', () => this.showHelpModal());
+        document.querySelectorAll('.section-btn').forEach(btn => btn.addEventListener('click', () => this.addSection(btn.dataset.section)));
+    }
 
-    // Add section
-    elements.sectionButtons.forEach(button => {
-        button.addEventListener('click', () => addSection(button.dataset.section));
-    });
+    /** @description Debounces a function to limit execution rate */
+    debounce(func, delay) {
+        clearTimeout(this.debounceTimeout);
+        this.debounceTimeout = setTimeout(func, delay);
+    }
 
-    // Add badge
-    elements.addBadge.addEventListener('click', () => {
-        const badge = elements.badgeInput.value.trim();
-        if (badge) {
-            badges.push(badge);
-            updateBadgeList();
-            elements.badgeInput.value = '';
+    /** @description Generates README content and updates preview */
+    generateReadme() {
+        const data = this.getFormData();
+        let content = `# ${data.projectName}\n\n`;
+        if (this.badges.length) content += this.badges.join(' ') + '\n\n';
+
+        let sections = [];
+        if (data.toc) {
+            sections.push('toc');
+            content += '## Table of Contents\n';
         }
-    });
+        if (data.description) {
+            sections.push('description');
+            content += `## Description\n\n${data.description}\n\n`;
+        }
+        if (data.template !== 'minimal') {
+            if (data.installation) {
+                sections.push('installation');
+                content += `## Installation\n\n${data.installation}\n\n`;
+            }
+            if (data.usage) {
+                sections.push('usage');
+                content += `## Usage\n\n${data.usage}\n\n`;
+            }
+        }
 
-    // Generate README
-    elements.generateBtn.addEventListener('click', generateReadme);
+        const additionalSections = Array.from(this.elements.additionalSections.children);
+        additionalSections.forEach(section => {
+            const sectionName = section.id.replace('Section', '');
+            const value = section.querySelector('textarea').value;
+            if (value) {
+                sections.push(sectionName);
+                content += `## ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}\n\n${value}\n\n`;
+            }
+        });
 
-    // Copy to clipboard
-    elements.copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(elements.preview.textContent)
-            .then(() => alert('README copied to clipboard!'))
-            .catch(err => console.error('Failed to copy: ', err));
-    });
+        if (data.toc) {
+            const toc = sections.filter(s => s !== 'toc').map(section => 
+                `- [${section.charAt(0).toUpperCase() + section.slice(1)}](#${section.toLowerCase().replace(/\s+/g, '-')})`
+            ).join('\n');
+            content = content.replace('## Table of Contents\n', `## Table of Contents\n${toc}\n\n`);
+        }
 
-    // Download README
-    elements.downloadBtn.addEventListener('click', () => {
-        const blob = new Blob([elements.preview.textContent], { type: 'text/markdown' });
+        this.elements.previewContainer.style.display = 'block';
+        this.elements.preview.className = `preview ${this.isGithubStyle ? 'github-style' : ''}`;
+        this.elements.preview.style.fontSize = `${this.settings.previewFontSize}px`;
+        this.elements.preview.innerHTML = this.isRenderedPreview ? marked.parse(content) : content;
+        if (this.settings.autoSave) this.autoSave();
+    }
+
+    validateAndGenerate() {
+        const projectName = this.elements.projectName.value.trim();
+        if (!projectName) {
+            this.showAlert('Project Name is required.', 'error');
+            return;
+        }
+        this.generateReadme();
+    }
+
+    resetForm() {
+        this.elements.form.reset();
+        this.badges = [];
+        this.elements.badgeList.innerHTML = '';
+        this.elements.additionalSections.innerHTML = '';
+        this.elements.previewContainer.style.display = 'none';
+    }
+
+    addBadge() {
+        const picker = this.elements.badgePicker.value;
+        const custom = this.elements.badgeInput.value.trim();
+        const badge = picker || custom;
+        if (badge) {
+            this.badges.push(badge);
+            this.updateBadgeList();
+            this.elements.badgeInput.value = '';
+            this.elements.badgePicker.value = '';
+            this.generateReadme();
+        }
+    }
+
+    updateBadgeList() {
+        this.elements.badgeList.innerHTML = '';
+        this.badges.forEach((badge, index) => {
+            const div = document.createElement('div');
+            div.className = 'badge-item';
+            div.textContent = badge;
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'x';
+            removeBtn.className = 'btn btn-danger';
+            removeBtn.addEventListener('click', () => {
+                this.badges.splice(index, 1);
+                this.updateBadgeList();
+                this.generateReadme();
+            });
+            div.appendChild(removeBtn);
+            this.elements.badgeList.appendChild(div);
+        });
+    }
+
+    makeSectionsDraggable() {
+        new Sortable(this.elements.additionalSections, {
+            animation: 150,
+            handle: '.badge-item',
+            onEnd: () => this.generateReadme(),
+        });
+    }
+
+    copyToClipboard() {
+        navigator.clipboard.writeText(this.elements.preview.textContent)
+            .then(() => this.showAlert('Copied to clipboard!', 'success'))
+            .catch(() => this.showAlert('Failed to copy to clipboard.', 'error'));
+    }
+
+    downloadMarkdown() {
+        const blob = new Blob([this.elements.preview.textContent], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -66,260 +186,222 @@ document.addEventListener('DOMContentLoaded', function() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    });
-
-    // Save template
-    elements.saveTemplate.addEventListener('click', saveCurrentTemplate);
-
-    // Load saved template
-    elements.savedTemplates.addEventListener('change', loadTemplate);
-
-    // Toggle preview mode
-    elements.togglePreview.addEventListener('click', () => {
-        isRenderedPreview = !isRenderedPreview;
-        elements.togglePreview.textContent = `Switch to ${isRenderedPreview ? 'Raw' : 'Rendered'}`;
-        generateReadme();
-    });
-
-    // Help button
-    elements.helpBtn.addEventListener('click', showHelpModal);
-
-    function setupPlaceholders() {
-        document.getElementById('projectName').placeholder = 'e.g., My Awesome Project';
-        document.getElementById('description').placeholder = 'e.g., A tool to simplify README creation with a user-friendly interface.';
-        document.getElementById('installation').placeholder = 'e.g., npm install my-awesome-project\nOR\nClone the repo and run npm install';
-        document.getElementById('usage').placeholder = 'e.g., Run `npm start` to launch the app.\nSee examples at /docs/examples.';
-        document.getElementById('badgeInput').placeholder = 'e.g., ![npm](https://img.shields.io/npm/v/my-awesome-project)';
     }
 
-    function setupRealTimeTips() {
-        const tipElements = {
-            description: document.createElement('small'),
-            installation: document.createElement('small'),
-            usage: document.createElement('small')
-        };
-
-        Object.entries(tipElements).forEach(([id, tip]) => {
-            tip.className = 'writing-tip';
-            tip.style.color = '#888';
-            tip.style.display = 'block';
-            tip.style.marginTop = '5px';
-            document.getElementById(id).parentNode.appendChild(tip);
-            document.getElementById(id).addEventListener('input', (e) => {
-                tip.textContent = getWritingTip(id, e.target.value);
-            });
-        });
+    downloadPdf() {
+        const element = this.elements.preview;
+        html2pdf().from(element).set({ margin: 1, filename: 'README.pdf' }).save();
     }
 
-    function getWritingTip(section, value) {
-        if (!value.trim()) {
-            return `Try starting with a brief overview of your ${section}.`;
-        }
-        if (section === 'description' && value.length < 50) {
-            return 'Consider adding more details about what your project does.';
-        }
-        if (section === 'installation' && !value.includes('npm') && !value.includes('git')) {
-            return 'Maybe include a common install command like `npm install` or `git clone`.';
-        }
-        if (section === 'usage' && !value.includes('`')) {
-            return 'Add a code snippet with backticks (`) for clarity.';
-        }
-        return 'Looks good! Keep it concise and clear.';
+    showAlert(message, type) {
+        this.elements.alertBox.textContent = message;
+        this.elements.alertBox.style.display = 'flex';
+        this.elements.alertBox.className = `alert alert-${type === 'error' ? 'danger' : 'success'}`;
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', () => this.elements.alertBox.style.display = 'none');
+        this.elements.alertBox.appendChild(closeBtn);
+        setTimeout(() => this.elements.alertBox.style.display = 'none', 5000);
     }
 
-    function showHelpModal() {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>Writing a Great README</h2>
-                <p><strong>Tips:</strong></p>
-                <ul>
-                    <li><strong>Description:</strong> Explain what your project does and why it’s useful.</li>
-                    <li><strong>Installation:</strong> Provide step-by-step instructions (e.g., <code>npm install</code>).</li>
-                    <li><strong>Usage:</strong> Show examples with code snippets (use \`\` for inline code).</li>
-                    <li><strong>Markdown Basics:</strong> Use # for headings, * for bullets, \`\`\` for code blocks.</li>
-                </ul>
-                <button id="closeModal">Close</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        document.getElementById('closeModal').addEventListener('click', () => modal.remove());
+    loadSampleReadme() {
+        this.elements.projectName.value = 'Sample Project';
+        this.elements.description.value = 'A sample project to demonstrate README generation.';
+        this.elements.installation.value = 'npm install sample-project';
+        this.elements.usage.value = 'Run `npm start` to begin.';
+        this.badges = ['![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)'];
+        this.updateBadgeList();
+        this.generateReadme();
     }
 
-    function addSection(sectionName) {
+    setupPlaceholders() {
+        this.elements.projectName.placeholder = 'e.g., My Awesome Project';
+        this.elements.description.placeholder = 'e.g., A tool to simplify README creation';
+        this.elements.installation.placeholder = 'e.g., npm install my-awesome-project';
+        this.elements.usage.placeholder = 'e.g., Run `npm start` to launch';
+        this.elements.badgeInput.placeholder = 'e.g., ![npm](https://img.shields.io/npm/v/my-awesome-project)';
+    }
+
+    setupRealTimePreview() {
+        [this.elements.projectName, this.elements.description, this.elements.installation, this.elements.usage]
+            .forEach(el => el.addEventListener('input', () => this.debounce(this.generateReadme.bind(this), 300)));
+    }
+
+    addSection(sectionName) {
         if (!document.getElementById(sectionName)) {
-            const sectionDiv = createSectionElement(sectionName);
-            elements.additionalSections.appendChild(sectionDiv);
+            const sectionDiv = this.createSectionElement(sectionName);
+            this.elements.additionalSections.appendChild(sectionDiv);
+            sectionDiv.querySelector('textarea').addEventListener('input', () => this.generateReadme());
         }
     }
 
-    function createSectionElement(sectionName) {
+    createSectionElement(sectionName) {
         const div = document.createElement('div');
-        div.className = 'form-group';
+        div.className = 'form-group badge-item';
         div.id = sectionName + 'Section';
-        
         const label = document.createElement('label');
         label.textContent = sectionName.charAt(0).toUpperCase() + sectionName.slice(1) + ':';
-        
         const textarea = document.createElement('textarea');
         textarea.id = sectionName;
-        textarea.placeholder = `e.g., ${getSectionPlaceholder(sectionName)}`;
-        
+        textarea.placeholder = this.getSectionPlaceholder(sectionName);
         const removeBtn = document.createElement('button');
         removeBtn.textContent = 'Remove';
-        removeBtn.style.backgroundColor = '#f44336';
-        removeBtn.style.marginTop = '5px';
-        removeBtn.style.padding = '5px 10px';
-        removeBtn.style.fontSize = '12px';
-        
-        removeBtn.addEventListener('click', () => elements.additionalSections.removeChild(div));
-        
+        removeBtn.className = 'btn btn-danger';
+        removeBtn.addEventListener('click', () => {
+            this.elements.additionalSections.removeChild(div);
+            this.generateReadme();
+        });
         div.appendChild(label);
         div.appendChild(textarea);
         div.appendChild(removeBtn);
         return div;
     }
 
-    function getSectionPlaceholder(sectionName) {
+    getSectionPlaceholder(sectionName) {
         const placeholders = {
-            features: 'List key features, e.g., * Fast performance\n* Easy to use',
-            technologies: 'e.g., Built with JavaScript, HTML, and CSS.',
-            contributing: 'e.g., Fork the repo, submit a PR, follow our code style.',
-            tests: 'e.g., Run `npm test` to execute the test suite.',
-            license: 'e.g., MIT License - see LICENSE file for details.',
-            contact: 'e.g., Reach out at email@example.com or on Twitter @username.'
+            features: 'e.g., * Fast performance\n* Easy to use',
+            technologies: 'e.g., Built with JavaScript, HTML, and CSS',
+            contributing: 'e.g., Fork the repo, submit a PR',
+            tests: 'e.g., Run `npm test` to execute tests',
+            license: 'e.g., MIT License - see LICENSE file',
+            contact: 'e.g., email@example.com'
         };
-        return placeholders[sectionName] || `Enter ${sectionName} information`;
+        return placeholders[sectionName] || `Enter ${sectionName} details`;
     }
 
-    // [Rest of your existing functions like updateBadgeList, generateReadme, etc., remain unchanged]
-    function updateBadgeList() {
-        elements.badgeList.innerHTML = '';
-        badges.forEach((badge, index) => {
-            const div = document.createElement('div');
-            div.className = 'badge-item';
-            div.textContent = badge;
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'x';
-            removeBtn.style.marginLeft = '10px';
-            removeBtn.addEventListener('click', () => {
-                badges.splice(index, 1);
-                updateBadgeList();
-            });
-            div.appendChild(removeBtn);
-            elements.badgeList.appendChild(div);
-        });
-    }
-
-    function generateReadme() {
-        const projectName = document.getElementById('projectName').value;
-        const description = document.getElementById('description').value;
-        const installation = document.getElementById('installation').value;
-        const usage = document.getElementById('usage').value;
-        const template = elements.templateSelect.value;
-
-        let readmeContent = `# ${projectName}\n\n`;
-        if (badges.length) readmeContent += badges.join(' ') + '\n\n';
-
-        let sections = [];
-        if (elements.tocCheckbox.checked) {
-            sections.push('toc');
-            readmeContent += '## Table of Contents\n';
-        }
-
-        if (description) {
-            sections.push('description');
-            readmeContent += `## Description\n\n${description}\n\n`;
-        }
-
-        if (template !== 'minimal') {
-            if (installation) {
-                sections.push('installation');
-                readmeContent += `## Installation\n\n${installation}\n\n`;
-            }
-            if (usage) {
-                sections.push('usage');
-                readmeContent += `## Usage\n\n${usage}\n\n`;
-            }
-        }
-
-        elements.sectionButtons.forEach(button => {
-            const sectionName = button.dataset.section;
-            const sectionElement = document.getElementById(sectionName);
-            if (sectionElement && sectionElement.value) {
-                sections.push(sectionName);
-                readmeContent += `## ${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}\n\n${sectionElement.value}\n\n`;
-            }
-        });
-
-        if (elements.tocCheckbox.checked) {
-            const toc = sections.filter(s => s !== 'toc').map(section => 
-                `- [${section.charAt(0).toUpperCase() + section.slice(1)}](#${section.toLowerCase().replace(/\s+/g, '-')})`
-            ).join('\n');
-            readmeContent = readmeContent.replace('## Table of Contents\n', `## Table of Contents\n${toc}\n\n`);
-        }
-
-        elements.previewContainer.style.display = 'block';
-        elements.preview.innerHTML = isRenderedPreview ? marked.parse(readmeContent) : readmeContent;
-        elements.preview.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    function saveCurrentTemplate() {
+    saveCurrentTemplate() {
         const templateName = prompt('Enter template name:');
         if (!templateName) return;
-
-        const templateData = {
-            projectName: document.getElementById('projectName').value,
-            description: document.getElementById('description').value,
-            installation: document.getElementById('installation').value,
-            usage: document.getElementById('usage').value,
-            badges: [...badges],
-            sections: {}
-        };
-
-        elements.sectionButtons.forEach(button => {
-            const section = document.getElementById(button.dataset.section);
-            if (section) templateData.sections[button.dataset.section] = section.value;
+        const templateData = this.getFormData();
+        templateData.badges = [...this.badges];
+        templateData.sections = {};
+        this.elements.additionalSections.children.forEach(section => {
+            const sectionName = section.id.replace('Section', '');
+            templateData.sections[sectionName] = section.querySelector('textarea').value;
         });
-
         const saved = JSON.parse(localStorage.getItem('readmeTemplates') || '{}');
         saved[templateName] = templateData;
         localStorage.setItem('readmeTemplates', JSON.stringify(saved));
-        loadSavedTemplates();
+        this.loadSavedTemplates();
     }
 
-    function loadSavedTemplates() {
+    loadSavedTemplates() {
         const saved = JSON.parse(localStorage.getItem('readmeTemplates') || '{}');
-        elements.savedTemplates.innerHTML = '<option value="">Load Saved Template</option>';
+        this.elements.savedTemplates.innerHTML = '<option value="">Load Saved Template</option>';
         Object.keys(saved).forEach(name => {
             const option = document.createElement('option');
             option.value = name;
             option.textContent = name;
-            elements.savedTemplates.appendChild(option);
+            this.elements.savedTemplates.appendChild(option);
         });
     }
 
-    function loadTemplate() {
-        const name = elements.savedTemplates.value;
+    loadTemplate() {
+        const name = this.elements.savedTemplates.value;
         if (!name) return;
-
         const saved = JSON.parse(localStorage.getItem('readmeTemplates') || '{}');
         const template = saved[name];
         if (!template) return;
-
-        document.getElementById('projectName').value = template.projectName || '';
-        document.getElementById('description').value = template.description || '';
-        document.getElementById('installation').value = template.installation || '';
-        document.getElementById('usage').value = template.usage || '';
-        badges = template.badges || [];
-        updateBadgeList();
-
-        elements.additionalSections.innerHTML = '';
+        this.elements.projectName.value = template.projectName || '';
+        this.elements.description.value = template.description || '';
+        this.elements.installation.value = template.installation || '';
+        this.elements.usage.value = template.usage || '';
+        this.badges = template.badges || [];
+        this.updateBadgeList();
+        this.elements.additionalSections.innerHTML = '';
         Object.entries(template.sections).forEach(([sectionName, value]) => {
-            const div = createSectionElement(sectionName);
+            const div = this.createSectionElement(sectionName);
             div.querySelector('textarea').value = value;
-            elements.additionalSections.appendChild(div);
+            this.elements.additionalSections.appendChild(div);
         });
+        this.generateReadme();
     }
-});
+
+    getFormData() {
+        return {
+            template: this.elements.templateSelect.value,
+            projectName: this.elements.projectName.value,
+            description: this.elements.description.value,
+            installation: this.elements.installation.value,
+            usage: this.elements.usage.value,
+            toc: this.elements.tocCheckbox.checked,
+        };
+    }
+
+    togglePreviewMode() {
+        this.isRenderedPreview = !this.isRenderedPreview;
+        document.getElementById('togglePreview').textContent = `Switch to ${this.isRenderedPreview ? 'Raw' : 'Rendered'}`;
+        this.generateReadme();
+    }
+
+    toggleGithubStyle() {
+        this.isGithubStyle = !this.isGithubStyle;
+        document.getElementById('githubPreview').textContent = this.isGithubStyle ? 'Default Style' : 'GitHub Style';
+        this.generateReadme();
+    }
+
+    showSettings() {
+        this.elements.settingsModal.style.display = 'flex';
+        document.getElementById('defaultTemplate').value = this.settings.defaultTemplate;
+        document.getElementById('previewFontSize').value = this.settings.previewFontSize;
+        document.getElementById('autoSave').checked = this.settings.autoSave;
+    }
+
+    saveSettings() {
+        this.settings.defaultTemplate = document.getElementById('defaultTemplate').value;
+        this.settings.previewFontSize = parseInt(document.getElementById('previewFontSize').value);
+        this.settings.autoSave = document.getElementById('autoSave').checked;
+        localStorage.setItem('readmeSettings', JSON.stringify(this.settings));
+        this.elements.settingsModal.style.display = 'none';
+        this.generateReadme();
+    }
+
+    loadSettings() {
+        const saved = JSON.parse(localStorage.getItem('readmeSettings'));
+        if (saved) this.settings = saved;
+        this.elements.templateSelect.value = this.settings.defaultTemplate;
+    }
+
+    autoSave() {
+        const autoSaveData = this.getFormData();
+        autoSaveData.badges = [...this.badges];
+        localStorage.setItem('readmeAutoSave', JSON.stringify(autoSaveData));
+    }
+
+    showHelpModal() {
+        this.elements.helpModal.style.display = 'flex';
+        const content = this.elements.helpModal.querySelector('#helpContent');
+        const tabs = this.elements.helpModal.querySelectorAll('.tab-btn');
+        const helpContent = {
+            'getting-started': `
+                <h3>Getting Started</h3>
+                <p>Fill in the fields to create your README. Use the "Generate README" button to preview, then copy or download.</p>
+            `,
+            'markdown-tips': `
+                <h3>Markdown Tips</h3>
+                <ul>
+                    <li><strong># Heading</strong> - Use # for headings</li>
+                    <li><strong>* Item</strong> - Use * for bullets</li>
+                    <li><strong>\`\`\`code\`\`\`</strong> - Use triple backticks for code blocks</li>
+                </ul>
+            `,
+            'faq': `
+                <h3>FAQ</h3>
+                <p><strong>Q:</strong> Can I save my work?<br><strong>A:</strong> Yes, use "Save Template" or enable auto-save in settings.</p>
+            `
+        };
+
+        const showTab = (tab) => {
+            content.innerHTML = helpContent[tab];
+            tabs.forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+        };
+
+        tabs.forEach(tab => tab.addEventListener('click', () => showTab(tab.dataset.tab)));
+        showTab('getting-started');
+        document.getElementById('closeHelp').addEventListener('click', () => this.elements.helpModal.style.display = 'none');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => new ReadmeGenerator());
+
