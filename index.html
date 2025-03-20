@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>README Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>README Generator</h1>
+            <button id="helpBtn" class="dark-mode-btn">Help</button> <!-- New Help Button -->
+            <button id="darkModeToggle" class="dark-mode-btn">Toggle Dark Mode</button>
+        </div>
+
+        <div class="form-group">
+            <label for="templateSelect">Template:</label>
+            <select id="templateSelect">
+                <option value="minimal">Minimal</option>
+                <option value="detailed">Detailed</option>
+                <option value="project">Project</option>
+                <option value="library">Library</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="projectName">Project Name:</label>
+            <input type="text" id="projectName" placeholder="Enter your project name">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" placeholder="Describe your project"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label for="installation">Installation:</label>
+                    <textarea id="installation" placeholder="How to install your project"></textarea>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label for="usage">Usage:</label>
+                    <textarea id="usage" placeholder="How to use your project"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Badges:</label>
+            <div class="badge-section">
+                <input type="text" id="badgeInput" placeholder="Enter badge markdown or URL">
+                <button id="addBadge">Add Badge</button>
+                <div id="badgeList"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Add Sections:</label>
+            <div class="section-buttons">
+                <button class="section-btn" data-section="features">Features</button>
+                <button class="section-btn" data-section="technologies">Technologies</button>
+                <button class="section-btn" data-section="contributing">Contributing</button>
+                <button class="section-btn" data-section="tests">Tests</button>
+                <button class="section-btn" data-section="license">License</button>
+                <button class="section-btn" data-section="contact">Contact</button>
+            </div>
+        </div>
+
+        <div id="additionalSections"></div>
+
+        <div class="options">
+            <label><input type="checkbox" id="tocCheckbox"> Include Table of Contents</label>
+            <button id="saveTemplate">Save Template</button>
+            <select id="savedTemplates"></select>
+        </div>
+
+        <button id="generateBtn">Generate README</button>
+
+        <div id="previewContainer" style="display: none;">
+            <div class="preview-header">
+                <h2>Preview:</h2>
+                <button id="togglePreview">Switch to Rendered</button>
+            </div>
+            <div class="preview" id="preview"></div>
+            <div class="actions">
+                <button class="copy-btn" id="copyBtn">Copy to Clipboard</button>
+                <button class="download-btn" id="downloadBtn">Download README.md</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

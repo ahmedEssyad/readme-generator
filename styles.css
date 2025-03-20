@@ -1,0 +1,293 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding: 20px;
+    transition: background-color 0.3s;
+}
+
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #fff;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: background-color 0.3s;
+}
+
+.dark-mode .container {
+    background-color: #2d2d2d;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.dark-mode h1 {
+    color: #fff;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.dark-mode label {
+    color: #ddd;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: #fff;
+}
+
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+    background-color: #3d3d3d;
+    color: #fff;
+    border-color: #555;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.col {
+    flex: 1;
+    min-width: 300px;
+}
+
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.section-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.section-btn {
+    background-color: #2196F3;
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.section-btn:hover {
+    background-color: #0b7dda;
+}
+
+#generateBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#generateBtn:hover {
+    background-color: #45a049;
+}
+
+.preview {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin-top: 20px;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
+
+.dark-mode .preview {
+    background-color: #333;
+    border-color: #555;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.copy-btn {
+    background-color: #ff9800;
+    color: white;
+}
+
+.copy-btn:hover {
+    background-color: #e68a00;
+}
+
+.download-btn {
+    background-color: #2196F3;
+    color: white;
+}
+
+.download-btn:hover {
+    background-color: #0b7dda;
+}
+
+.dark-mode-btn {
+    background-color: #666;
+    color: white;
+    padding: 8px 16px;
+}
+
+.dark-mode-btn:hover {
+    background-color: #555;
+}
+
+.badge-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#badgeList {
+    margin-top: 10px;
+}
+
+.badge-item {
+    background-color: #f0f0f0;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.options {
+    margin: 15px 0;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+#saveTemplate {
+    background-color: #9C27B0;
+    color: white;
+    padding: 8px 16px;
+}
+
+#saveTemplate:hover {
+    background-color: #7B1FA2;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#togglePreview {
+    background-color: #607D8B;
+    color: white;
+    padding: 8px 16px;
+}
+
+#togglePreview:hover {
+    background-color: #455A64;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .modal-content {
+    background: #2d2d2d;
+    color: #fff;
+}
+
+.modal-content button {
+    background-color: #2196F3;
+    color: white;
+    margin-top: 15px;
+}
+
+.modal-content button:hover {
+    background-color: #0b7dda;
+}
+
+.writing-tip {
+    font-size: 12px;
+}
